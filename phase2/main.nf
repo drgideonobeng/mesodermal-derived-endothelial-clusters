@@ -17,7 +17,7 @@ nextflow.enable.dsl = 2
  * The samplesheet 01_normalize.R consumes is GENERATED from params/samples.yml
  * at launch (same single source of truth as phase1 / download) — no hand-edited
  * paths. Run phase1 first, then:
- *   nextflow run phase2a/main.nf -profile conda,apple_silicon
+ *   nextflow run phase2/main.nf -profile conda,apple_silicon
  *
  * SYNTAX NOTE: under Nextflow >=25 strict syntax, only DECLARATIONS live at the
  * top level — all statements (roster parse, samplesheet build) go inside workflow{}.

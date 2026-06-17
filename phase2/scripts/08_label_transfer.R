@@ -14,7 +14,7 @@
 # and a one-time ExperimentHub download (cached afterwards; needs internet).
 # Run standalone first to do the download + inspect the crosstab before wiring
 # into the pipeline:
-#   Rscript scripts/08_label_transfer.R --input results/phase2a/objects/07_annotated.rds
+#   Rscript scripts/08_label_transfer.R --input results/phase2/objects/07_annotated.rds
 #
 # Input : 07_annotated.rds
 # Output: 08_label_transfer_object.rds | 08_transfer_crosstab.csv |
