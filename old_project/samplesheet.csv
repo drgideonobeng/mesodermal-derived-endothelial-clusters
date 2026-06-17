@@ -1,0 +1,5 @@
+sample_id,path,timepoint
+E80,/ABSOLUTE/PATH/TO/paa-development/results/phase1/mesp1_e80/objects/04_seurat_filtered.rds,E80
+E825,/ABSOLUTE/PATH/TO/paa-development/results/phase1/mesp1_e825/objects/04_seurat_filtered.rds,E825
+E95,/ABSOLUTE/PATH/TO/paa-development/results/phase1/mesp1_e95_rep1/objects/04_seurat_filtered.rds,E95
+E105,/ABSOLUTE/PATH/TO/paa-development/results/phase1/mesp1_e105/objects/04_seurat_filtered.rds,E105

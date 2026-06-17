@@ -1,0 +1,90 @@
+# =============================================================================
+# PAA Dev Trajectory — Sample Configuration (single source of truth)
+# =============================================================================
+# Read by scripts/download_geo.sh, phase1/main.nf, AND phase3a/main.nf.
+#
+# WT Mesp1Cre-lineage timecourse ONLY — 4 samples from GSE158941 (Nomaru et al.
+# 2021, Morrow lab). This is the decoupled WT trajectory project: the E9.5 rep2
+# (GSE186934) and both Tbx1 KO samples from the parent atlas are intentionally
+# excluded. This analysis is WT-only across E8.0 -> E10.5.
+#
+# DESIGN: explicit, per-file GEO URLs (no URL construction). Every URL was
+# verified against the live GEO record (May 2026). Explicit URLs are immune to
+# GEO's filename inconsistencies ('_' vs '-', genes.tsv vs features.tsv).
+#
+# PROVENANCE: all 4 samples processed identically by the original authors —
+# mm10 reference, Cell Ranger 3.1.0, 10x 3' v2 chemistry, GFP+ FACS-sorted
+# (Mesp1Cre;Rosa26-GFP lineage). Shared reference build => Phase 1 feature
+# reconciliation is a light intersection, not a genome-build mismatch.
+# Consequence of GFP+ sorting: neural-crest / smooth-muscle populations are
+# under-captured.
+# =============================================================================
+project_name: "PAA_Dev_Trajectory_WT"
+raw_data_dir: "raw_data"
+
+samples:
+  # ===== WT Mesp1 timecourse (GSE158941; '_' separator, 'genes' naming) =====
+  - id: "mesp1_e80"
+    geo_id: "GSM4816083"
+    timepoint: "E80"
+    genotype: "WT"
+    replicate: 1
+    series_id: "GSE158941"
+    barcodes_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816083/suppl/GSM4816083_Mesp1_E80_barcodes.tsv.gz"
+    features_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816083/suppl/GSM4816083_Mesp1_E80_genes.tsv.gz"
+    matrix_url:   "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816083/suppl/GSM4816083_Mesp1_E80_matrix.mtx.gz"
+
+  - id: "mesp1_e825"
+    geo_id: "GSM4816084"
+    timepoint: "E825"
+    genotype: "WT"
+    replicate: 1
+    series_id: "GSE158941"
+    barcodes_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816084/suppl/GSM4816084_Mesp1_E825_barcodes.tsv.gz"
+    features_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816084/suppl/GSM4816084_Mesp1_E825_genes.tsv.gz"
+    matrix_url:   "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816084/suppl/GSM4816084_Mesp1_E825_matrix.mtx.gz"
+
+  - id: "mesp1_e95_rep1"
+    geo_id: "GSM4816085"
+    timepoint: "E95"
+    genotype: "WT"
+    replicate: 1
+    series_id: "GSE158941"
+    barcodes_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816085/suppl/GSM4816085_Mesp1_E95_barcodes.tsv.gz"
+    features_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816085/suppl/GSM4816085_Mesp1_E95_genes.tsv.gz"
+    matrix_url:   "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816085/suppl/GSM4816085_Mesp1_E95_matrix.mtx.gz"
+
+  - id: "mesp1_e105"
+    geo_id: "GSM4816086"
+    timepoint: "E105"
+    genotype: "WT"
+    replicate: 1
+    series_id: "GSE158941"
+    barcodes_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816086/suppl/GSM4816086_Mesp1_E105_barcodes.tsv.gz"
+    features_url: "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816086/suppl/GSM4816086_Mesp1_E105_genes.tsv.gz"
+    matrix_url:   "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4816nnn/GSM4816086/suppl/GSM4816086_Mesp1_E105_matrix.mtx.gz"
+
+# =============================================================================
+# QC parameters
+# 'defaults' apply to all samples; per-sample 'qc_overrides' take precedence.
+# Inspect each sample's QC violin (phase1 emits 03_qc_plots.pdf) before trusting
+# the defaults — timepoints have different distributions.
+# =============================================================================
+qc_params:
+  defaults:
+    min_features: 500
+    max_features: 7000
+    max_percent_mt: 5
+
+  # No per-sample overrides for the 4 WT timepoints (all fit defaults on the
+  # May 2026 violin review). Add here if a sample's distribution warrants it.
+  qc_overrides: {}
+
+# =============================================================================
+# Phase 1 clustering parameters
+# =============================================================================
+cluster_params:
+  n_hvgs: 2000
+  n_pcs: 30
+  cluster_res: 0.4
+  seed: 42        # fix stochastic steps (UMAP/Louvain) for reproducibility
