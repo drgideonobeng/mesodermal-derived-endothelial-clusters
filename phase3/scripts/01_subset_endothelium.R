@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# 09_subset_endothelium.R
+# 01_subset_endothelium.R
 # Subset the endothelial compartment BY LINEAGE LABEL (not by single-gene gating)
 # and RE-DERIVE structure within it: re-HVG, re-integrate, re-cluster. The point
 # is to resolve the endothelial *beds* (arterial / venous / endocardial /
@@ -15,10 +15,11 @@
 # `timepoint` here is BOTH the batch variable AND the biological time axis.
 #   --integrate TRUE  (default): fastMNN mixes timepoints out. Use this to
 #       re-CLUSTER and find beds — you want bed identity, not stage, to drive
-#       the clusters.
+#       the clusters. Writes to results/phase3/<lineage>/integrated/
 #   --integrate FALSE: uncorrected PCA, timepoints preserved. Use this to build
 #       the embedding you'll hand to TRAJECTORY — fastMNN can flatten the very
-#       developmental gradient pseudotime needs to trace.
+#       developmental gradient pseudotime needs to trace. Writes to
+#       results/phase3/<lineage>/uncorrected/
 # Run both; compare the by-timepoint UMAP. If the integrated version fully
 # homogenises timepoints, that's over-correction for trajectory purposes.
 #
@@ -36,11 +37,11 @@
 #   cells are dropped from the integration (reported), since they can't be
 #   reliably corrected.
 #
-# Input : results/phase2a/objects/07_annotated.rds  (frozen `lineage`)
-# Output: 09_endo_subset.rds | 09_endo_umap_overlays.pdf |
-#         09_endo_bed_dotplot.pdf | 09_endo_subcluster_markers.csv |
-#         09_endo_subcluster_top.csv | 09_endo_subcluster_summary.csv
-#         (+ 09_endo_clustree.pdf if --run_sweep)
+# Input : results/phase2/objects/07_annotated.rds  (frozen `lineage`)
+# Output: 01_endo_subset.rds | 01_endo_umap_overlays.pdf |
+#         01_endo_bed_dotplot.pdf | 01_endo_subcluster_markers.csv |
+#         01_endo_subcluster_top.csv | 01_endo_subcluster_summary.csv
+#         (+ 01_endo_clustree.pdf if --run_sweep)
 
 suppressPackageStartupMessages({
   library(Seurat)
@@ -53,7 +54,7 @@ suppressPackageStartupMessages({
 
 opt <- parse_args(OptionParser(option_list = list(
   make_option("--input",           type = "character",
-              default = "results/phase2a/objects/07_annotated.rds"),
+              default = "results/phase2/objects/07_annotated.rds"),
   make_option("--lineages",        type = "character",
               default = "Endothelium,Endocardium",
               help = "comma-separated frozen lineage labels to subset"),
@@ -69,14 +70,22 @@ opt <- parse_args(OptionParser(option_list = list(
               help = "drop Tirosh cell-cycle genes from the HVG list"),
   make_option("--run_sweep",       action = "store_true", default = FALSE,
               help = "clustree resolution sweep (does not change locked resolution)"),
-  make_option("--outdir",          type = "character", default = "results/phase2a/endo_subset",
-              help = "directory for all outputs (created if absent)")
+  make_option("--lineage",         type = "character", default = "endothelium",
+              help = "phase-3 namespace: results/phase3/<lineage>/<embedding>"),
+  make_option("--outdir",          type = "character", default = NULL,
+              help = "override; default results/phase3/<lineage>/{integrated|uncorrected}")
 )))
 
 set.seed(42)
 tp_order <- c("E80", "E825", "E95", "E105")
 tp_cols  <- setNames(viridisLite::viridis(4, option = "D", direction = -1), tp_order)
 lineages <- str_split(opt$lineages, ",")[[1]] |> str_trim()
+
+# Output dir is namespaced by lineage + embedding so integrated/uncorrected runs
+# never collide, and the same script serves any cluster (--lineage cardiomyocyte ...).
+embed_tag <- if (opt$integrate) "integrated" else "uncorrected"
+if (is.null(opt$outdir))
+  opt$outdir <- file.path("results/phase3", opt$lineage, embed_tag)
 
 # All outputs go under --outdir (bare filenames otherwise land in the CWD,
 # since this script emits unprefixed names for Nextflow publishDir routing).
@@ -156,8 +165,8 @@ if (opt$run_sweep) {
     sub[[glue("subres_{r}")]] <- Idents(sub)
   }
   ct <- clustree(sub@meta.data, prefix = "subres_") + ggtitle("Endothelial subset sweep")
-  ggsave(out("09_endo_clustree.pdf"), ct, width = 9, height = 12)
-  message(glue("[subset] clustree sweep -> {out('09_endo_clustree.pdf')}"))
+  ggsave(out("01_endo_clustree.pdf"), ct, width = 9, height = 12)
+  message(glue("[subset] clustree sweep -> {out('01_endo_clustree.pdf')}"))
 }
 
 # ── Cluster at locked resolution ──────────────────────────────────────────────
@@ -172,7 +181,7 @@ p_lin  <- DimPlot(sub, reduction = "umap_sub", group.by = "lineage") + ggtitle(g
 p_time <- DimPlot(sub, reduction = "umap_sub", group.by = "timepoint", cols = tp_cols) +
   ggtitle("Timepoint (trajectory axis / integration QC)")
 p_phase <- DimPlot(sub, reduction = "umap_sub", group.by = "Phase") + ggtitle("Cell-cycle phase (artifact check)")
-ggsave(out("09_endo_umap_overlays.pdf"), (p_sub | p_lin) / (p_time | p_phase), width = 14, height = 12)
+ggsave(out("01_endo_umap_overlays.pdf"), (p_sub | p_lin) / (p_time | p_phase), width = 14, height = 12)
 
 # ── Endothelial bed panel (grouped dotplot; absent genes dropped + reported) ──
 bed_panel <- list(
@@ -201,7 +210,7 @@ bed_keep <- keep(bed_keep, ~ length(.x) > 0)
 p_dot <- DotPlot(sub, features = bed_keep, group.by = "subcluster") + RotatedAxis() +
   labs(title = glue("Endothelial bed markers by subcluster (res {opt$resolution})")) +
   theme(axis.text.x = element_text(size = 7), strip.text.x = element_text(size = 7, angle = 90))
-ggsave(out("09_endo_bed_dotplot.pdf"), p_dot, width = 18, height = 6)
+ggsave(out("01_endo_bed_dotplot.pdf"), p_dot, width = 18, height = 6)
 
 # ── Unbiased subcluster markers (annotation aid) ──────────────────────────────
 future::plan("sequential")
@@ -209,14 +218,14 @@ options(future.globals.maxSize = 16 * 1024^3)
 Idents(sub) <- "subcluster"
 markers <- FindAllMarkers(sub, layer = "data", only.pos = TRUE,
                           min.pct = 0.25, logfc.threshold = 0.25, verbose = FALSE)
-write_csv(markers, out("09_endo_subcluster_markers.csv"))
+write_csv(markers, out("01_endo_subcluster_markers.csv"))
 markers |> group_by(cluster) |> slice_max(avg_log2FC, n = 8, with_ties = FALSE) |>
-  ungroup() |> write_csv(out("09_endo_subcluster_top.csv"))
+  ungroup() |> write_csv(out("01_endo_subcluster_top.csv"))
 
 # ── Subcluster composition (timepoint + prior lineage) ────────────────────────
 sub@meta.data |> as_tibble() |>
   count(subcluster, timepoint, lineage) |>
-  write_csv(out("09_endo_subcluster_summary.csv"))
+  write_csv(out("01_endo_subcluster_summary.csv"))
 
-saveRDS(sub, out("09_endo_subset.rds"))
-message(glue("[subset] done -> {out('09_endo_subset.rds')}"))
+saveRDS(sub, out("01_endo_subset.rds"))
+message(glue("[subset] done -> {out('01_endo_subset.rds')}"))

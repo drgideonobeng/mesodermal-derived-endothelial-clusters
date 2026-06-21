@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# 11_trajectory.R
+# 03_trajectory.R
 # Clean developmental trajectory of the endothelial compartment: progression from
 # the Angioblast progenitor to the mature endothelial fates, with the branching
 # structure and the connectivity between beds made explicit. No SHF / tip / origin
@@ -21,25 +21,35 @@
 # continuous late island as reliable and cross-gap ordering as approximate. The
 # late-window refit (next script) is what makes gene-vs-pseudotime quantitative.
 #
-# Input : --traj  results/phase2a/endo_traj/09_endo_subset.rds    (uncorrected)
-#         --annot results/phase2a/endo_only/10_endo_annotated.rds  (bed labels)
-# Output: 11_trajectory_lineages.pdf | 11_trajectory_pseudotime.pdf |
-#         11_lineage_structure.txt   | 11_trajectory_object.rds
+# Input : --traj  results/phase3/endothelium/uncorrected/01_endo_subset.rds   (uncorrected)
+#         --annot results/phase3/endothelium/integrated/02_endo_annotated.rds (bed labels)
+# Output: 03_trajectory_lineages.pdf | 03_trajectory_pseudotime.pdf |
+#         03_lineage_structure.txt   | 03_trajectory_object.rds
 
 suppressPackageStartupMessages({
   library(Seurat); library(slingshot); library(tidyverse); library(glue); library(optparse)
 })
 
 opt <- parse_args(OptionParser(option_list = list(
-  make_option("--traj",   type = "character",
-              default = "results/phase2a/endo_traj/09_endo_subset.rds"),
-  make_option("--annot",  type = "character",
-              default = "results/phase2a/endo_only/10_endo_annotated.rds"),
-  make_option("--outdir", type = "character", default = "results/phase2a/endo_traj"),
-  make_option("--root",   type = "character", default = "Angioblast"),
-  make_option("--n_dims", type = "integer",   default = 20L)
+  make_option("--lineage", type = "character", default = "endothelium",
+              help = "phase-3 namespace under results/phase3/<lineage>/"),
+  make_option("--traj",    type = "character", default = NULL,
+              help = "uncorrected subset; default results/phase3/<lineage>/uncorrected/01_endo_subset.rds"),
+  make_option("--annot",   type = "character", default = NULL,
+              help = "annotated integrated object; default results/phase3/<lineage>/integrated/02_endo_annotated.rds"),
+  make_option("--outdir",  type = "character", default = NULL,
+              help = "default results/phase3/<lineage>/uncorrected"),
+  make_option("--root",    type = "character", default = "Angioblast"),
+  make_option("--n_dims",  type = "integer",   default = 20L)
 )))
 set.seed(42)
+
+# ── Resolve paths from --lineage (override individually if needed) ─────────────
+base <- file.path("results/phase3", opt$lineage)
+if (is.null(opt$traj))   opt$traj   <- file.path(base, "uncorrected", "01_endo_subset.rds")
+if (is.null(opt$annot))  opt$annot  <- file.path(base, "integrated",  "02_endo_annotated.rds")
+if (is.null(opt$outdir)) opt$outdir <- file.path(base, "uncorrected")
+dir.create(opt$outdir, recursive = TRUE, showWarnings = FALSE)
 out <- function(f) file.path(opt$outdir, f)
 
 traj  <- readRDS(opt$traj)
@@ -74,7 +84,7 @@ writeLines(c(glue("Root: {opt$root}"),
              glue("Lineages inferred: {length(lin)}"),
              glue("Terminal fates: {paste(map_chr(lin, ~ tail(.x, 1)), collapse = ', ')}"),
              "", struct),
-           out("11_lineage_structure.txt"))
+           out("03_lineage_structure.txt"))
 message("[slingshot] lineage structure:"); walk(struct, ~ message("  ", .x))
 
 # -- Bed centroids + inferred branch edges in UMAP space (the connectivity tree) -
@@ -99,7 +109,7 @@ p_lin <- ggplot(um, aes(u1, u2)) +
        subtitle = "cells coloured by bed; nodes = bed centroids; arrows = inferred branch tree",
        colour = NULL) +
   theme_minimal(base_size = 11)
-ggsave(out("11_trajectory_lineages.pdf"), p_lin, width = 9, height = 7)
+ggsave(out("03_trajectory_lineages.pdf"), p_lin, width = 9, height = 7)
 
 # -- Plot 2: pseudotime maturation gradient over the UMAP ----------------------
 p_pt <- ggplot(um, aes(u1, u2, colour = pseudotime)) +
@@ -109,7 +119,7 @@ p_pt <- ggplot(um, aes(u1, u2, colour = pseudotime)) +
        subtitle = "mean across lineages; cross-gap ordering interpolated, not sampled",
        colour = "pseudotime") +
   theme_minimal(base_size = 11)
-ggsave(out("11_trajectory_pseudotime.pdf"), p_pt, width = 8, height = 6)
+ggsave(out("03_trajectory_pseudotime.pdf"), p_pt, width = 8, height = 6)
 
-saveRDS(list(sds = sds, traj = traj, lineages = lin), out("11_trajectory_object.rds"))
-message(glue("[done] -> {out('11_trajectory_object.rds')}"))
+saveRDS(list(sds = sds, traj = traj, lineages = lin), out("03_trajectory_object.rds"))
+message(glue("[done] -> {out('03_trajectory_object.rds')}"))

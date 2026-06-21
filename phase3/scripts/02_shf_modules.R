@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# 10_shf_modules.R
+# 02_shf_modules.R
 # Harden the non-SHF / compensatory-cell leads from the Arterial_PAA (subcluster 3)
 # SHF split. The single-gene DE (Esm1/Adm/Hoxb up in SHF-low) did NOT survive
 # multiple-testing correction — underpowered with only ~56 SHF-low cells. Here we
@@ -19,21 +19,30 @@
 # map is valid ONLY for the frozen clustering in --input; a guard fails loudly if
 # the clustering differs.
 #
-# Input : results/phase2a/endo_only/09_endo_subset_FROZEN.rds  (integrated, 6 beds)
-# Output: 10_endo_annotated.rds | 10_module_violins.pdf | 10_module_tests.csv
+# Input : results/phase3/endothelium/integrated/01_endo_subset.rds  (integrated, 6 beds)
+# Output: 02_endo_annotated.rds | 02_module_violins.pdf | 02_module_tests.csv
 
 suppressPackageStartupMessages({
   library(Seurat); library(tidyverse); library(glue); library(optparse)
 })
 
 opt <- parse_args(OptionParser(option_list = list(
-  make_option("--input",     type = "character",
-              default = "results/phase2a/endo_only/09_endo_subset_FROZEN.rds"),
-  make_option("--outdir",    type = "character", default = "results/phase2a/endo_only"),
+  make_option("--lineage",   type = "character", default = "endothelium",
+              help = "phase-3 namespace under results/phase3/<lineage>/"),
+  make_option("--input",     type = "character", default = NULL,
+              help = "integrated subset object; default results/phase3/<lineage>/integrated/01_endo_subset.rds"),
+  make_option("--outdir",    type = "character", default = NULL,
+              help = "default results/phase3/<lineage>/integrated"),
   make_option("--focus_bed", type = "character", default = "Arterial_PAA",
               help = "bed within which to test SHF-high vs SHF-low")
 )))
 set.seed(42)
+
+# ── Resolve paths from --lineage (override with --input / --outdir) ────────────
+base <- file.path("results/phase3", opt$lineage)
+if (is.null(opt$input))  opt$input  <- file.path(base, "integrated", "01_endo_subset.rds")
+if (is.null(opt$outdir)) opt$outdir <- file.path(base, "integrated")
+dir.create(opt$outdir, recursive = TRUE, showWarnings = FALSE)
 out <- function(f) file.path(opt$outdir, f)
 
 sub <- readRDS(opt$input)
@@ -89,7 +98,7 @@ test_one <- function(score) {
 }
 res <- map_df(c("Tip_score","PostHox_score"), test_one) |>
   mutate(p_adj = p.adjust(p, "BH"))
-print(res); write_csv(res, out("10_module_tests.csv"))
+print(res); write_csv(res, out("02_module_tests.csv"))
 
 # ── Visualise the split ───────────────────────────────────────────────────────
 vln <- md |> select(shf_status, Tip_score, PostHox_score) |>
@@ -101,7 +110,7 @@ vln <- md |> select(shf_status, Tip_score, PostHox_score) |>
   labs(title = glue("Independent programs across SHF split in {opt$focus_bed}"),
        subtitle = "Tip/PostHox genes exclude the DE hits — independent test of the lead") +
   theme_minimal(base_size = 11) + theme(legend.position = "none")
-ggsave(out("10_module_violins.pdf"), vln, width = 8, height = 4)
+ggsave(out("02_module_violins.pdf"), vln, width = 8, height = 4)
 
-saveRDS(sub, out("10_endo_annotated.rds"))
-message(glue("[done] bed + scores frozen -> {out('10_endo_annotated.rds')}"))
+saveRDS(sub, out("02_endo_annotated.rds"))
+message(glue("[done] bed + scores frozen -> {out('02_endo_annotated.rds')}"))
