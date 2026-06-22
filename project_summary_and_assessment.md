@@ -1,4 +1,4 @@
-# paa-dev-trajectory — Project Summary & Assessment
+# mesodermal-derived-endothelial-clusters — Project Summary & Assessment
 
 *WT scRNA-seq of microdissected cardiopharyngeal region, GSE158941. Four timepoints (E8.0, E8.25, E9.5, E10.5), Mesp1-lineage cells. Focus: SHF contribution to the 4th pharyngeal arch artery (PAA) endothelium.*
 

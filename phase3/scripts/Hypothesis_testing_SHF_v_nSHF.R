@@ -2,7 +2,7 @@ library(Seurat)
 install.packages("SingleCellExperiment")
 library(SingleCellExperiment)
 library(tidyverse)
-obj <- readRDS("~/bioinformatics/scRNAseq/paa-dev-trajectory/results/phase2a/objects/07_annotated.rds")
+obj <- readRDS("~/bioinformatics/scRNAseq/mesodermal-derived-endothelial-clusters/results/phase2a/objects/07_annotated.rds")
 bra <- intersect(c("Tbxt","T"), rownames(obj))[1]      # which symbol your data uses
 message("Brachyury symbol: ", bra)
 d <- FetchData(obj, vars = c("Sox2", bra, "clust_res0.4"))
@@ -47,8 +47,8 @@ obj <- readRDS("07_annotated.rds")
 table(obj$lineage)   # 16 named levels, no NA, counts match the cluster sizes
 
 library(Seurat); library(tidyverse)
-t8 <- readRDS("~/bioinformatics/scRNAseq/paa-dev-trajectory/results/phase2a/objects/08_label_transfer_object.rds")  # predictions intact
-o7 <- readRDS("~/bioinformatics/scRNAseq/paa-dev-trajectory/results/phase2a/objects/07_annotated.rds")              # corrected lineage
+t8 <- readRDS("~/bioinformatics/scRNAseq/mesodermal-derived-endothelial-clusters/results/phase2a/objects/08_label_transfer_object.rds")  # predictions intact
+o7 <- readRDS("~/bioinformatics/scRNAseq/mesodermal-derived-endothelial-clusters/results/phase2a/objects/07_annotated.rds")              # corrected lineage
 
 t8$lineage <- o7@meta.data[colnames(t8), "lineage"]                    # barcode-matched swap
 
@@ -59,8 +59,8 @@ write_csv(cross, "08_transfer_crosstab.csv")
 
 library(glue)
 library(fs)
-root_path <- path("~", "bioinformatics", "scRNAseq", "paa-dev-trajectory")
-setwd("~/bioinformatics/scRNAseq/paa-dev-trajectory")
+root_path <- path("~", "bioinformatics", "scRNAseq", "mesodermal-derived-endothelial-clusters")
+setwd("~/bioinformatics/scRNAseq/mesodermal-derived-endothelial-clusters")
 file_path <- path("results", "phase2a", "endo_only", "09_endo_subset.rds")
 sub <- readRDS(file_path)
 nlevels(sub$subcluster); table(sub$subcluster)
